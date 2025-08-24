@@ -2,6 +2,7 @@
 
 ### Важное примечание для разработчиков
 
+```
 **ИИ приветствуется как инструмент для рутинных задач и частичного написания кода**, но:
 
 🔹 **Вы должны понимать что делаете** - ИИ может ошибаться, вы должны проверять его работу
@@ -21,7 +22,7 @@
 - Добавляйте объясняющие комментарии
 - Пишите код так, чтобы он был понятен без ИИ
 
-
+```
 [![Go](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org) [![Kotlin](https://img.shields.io/badge/Kotlin-1.9+-purple.svg)](https://kotlinlang.org) [![LibP2P](https://img.shields.io/badge/LibP2P-0.32+-green.svg)](https://libp2p.io) [![IPFS](https://img.shields.io/badge/IPFS-0.20+-yellow.svg)](https://ipfs.io) [![WebRTC](https://img.shields.io/badge/WebRTC-1.0+-red.svg)](https://webrtc.org) [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com) [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 **Незаблокируемый P2P месенджер с E2E шифрованием и автономным режимом**
