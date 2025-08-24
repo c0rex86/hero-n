@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  # Bootstrap сервер - точка входа в сеть
+  bootstrap:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"      # HTTP API
+      - "4001:4001"      # LibP2P P2P
+    environment:
+      - NODE_TYPE=bootstrap
+      - NODE_ID=bootstrap-main
+      - LOG_LEVEL=info
+      - P2P_PORT=4001
+      - HTTP_PORT=8080
+    volumes:
+      - ./backend/config:/app/config:ro
+      - bootstrap_data:/app/data
+    networks:
+      - hero-n
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Relay сервер - для NAT traversal
+  relay:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"      # HTTP API
+      - "4002:4001"      # LibP2P P2P
+    environment:
+      - NODE_TYPE=relay
+      - NODE_ID=relay-main
+      - LOG_LEVEL=info
+      - P2P_PORT=4001
+      - HTTP_PORT=8080
+      - BOOTSTRAP_PEERS=/ip4/172.20.0.2/tcp/4001/p2p/bootstrap-main
+    volumes:
+      - ./backend/config:/app/config:ro
+      - relay_data:/app/data
+    networks:
+      - hero-n
+    depends_on:
+      - bootstrap
+    restart: unless-stopped
+
+  # Storage сервер - для IPFS
+  storage:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"      # HTTP API
+      - "4003:4001"      # LibP2P P2P
+      - "5001:5001"      # IPFS API
+    environment:
+      - NODE_TYPE=storage
+      - NODE_ID=storage-main
+      - LOG_LEVEL=info
+      - P2P_PORT=4001
+      - HTTP_PORT=8080
+      - IPFS_PORT=5001
+      - BOOTSTRAP_PEERS=/ip4/172.20.0.2/tcp/4001/p2p/bootstrap-main
+    volumes:
+      - ./backend/config:/app/config:ro
+      - storage_data:/app/data
+      - ipfs_data:/app/ipfs
+    networks:
+      - hero-n
+    depends_on:
+      - bootstrap
+    restart: unless-stopped
+
+  # PostgreSQL для метаданных
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=hero_n
+      - POSTGRES_USER=hero_user
+      - POSTGRES_PASSWORD=hero_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - hero-n
+    restart: unless-stopped
+
+  # Redis для кеширования
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hero-n
+    restart: unless-stopped
+
+  # Prometheus для мониторинга
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - hero-n
+    restart: unless-stopped
+
+  # Grafana для визуализации
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - hero-n
+    restart: unless-stopped
+
+# Определение сетей
+networks:
+  hero-n:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Определение volumes
+volumes:
+  bootstrap_data:
+    driver: local
+  relay_data:
+    driver: local
+  storage_data:
+    driver: local
+  ipfs_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
