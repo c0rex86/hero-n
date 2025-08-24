@@ -48,6 +48,11 @@ func main() {
 		logger.Fatalf("Не удалось запустить хранилище: %v", err)
 	}
 
+	// TODO: Создать сервисы для работы с данными
+	// messageService := api.NewMessageService(core, core.GetCrypto(), storage, logger)
+	// userService := api.NewUserService(storage, logger)
+	// authService := api.NewAuthService(storage, logger)
+
 	// Создаем HTTP API сервер
 	server := api.NewServer(*port, core, p2pNode, storage, logger)
 
