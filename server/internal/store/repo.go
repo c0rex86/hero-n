@@ -31,6 +31,15 @@ func (r *AuthRepo) FindUserByUsername(ctx context.Context, username string) (*au
 	return &u, nil
 }
 
+func (r *AuthRepo) GetPublicKey(ctx context.Context, userID string) ([]byte, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT public_key FROM users WHERE id = ?`, userID)
+	var pk []byte
+	if err := row.Scan(&pk); err != nil {
+		return nil, fmt.Errorf("get public key: %w", err)
+	}
+	return pk, nil
+}
+
 func (r *AuthRepo) CreateSession(ctx context.Context, userID string, deviceID string, refreshHash []byte, expiresAt time.Time) (string, error) {
 	id := generateUUIDv7()
 	_, err := r.db.ExecContext(ctx, `INSERT INTO sessions (id, user_id, device_id, refresh_token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -47,6 +56,14 @@ func (r *AuthRepo) GetSessionByRefreshHash(ctx context.Context, refreshHash []by
 		return "", "", time.Time{}, fmt.Errorf("get session: %w", err)
 	}
 	return userID, deviceID, time.Unix(expUnix, 0), nil
+}
+
+func (r *AuthRepo) WriteAudit(ctx context.Context, userID, deviceID, eventType string) error {
+	id := generateUUIDv7()
+	_, err := r.db.ExecContext(ctx, `INSERT INTO audit_logs (id, user_id, device_id, event_type, created_at) VALUES (?, ?, ?, ?, ?)`,
+		id, userID, deviceID, eventType, time.Now().Unix())
+	if err != nil { return fmt.Errorf("write audit: %w", err) }
+	return nil
 }
 
 func generateUUIDv7() string {

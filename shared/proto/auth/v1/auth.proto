@@ -35,8 +35,17 @@ message RefreshResponse {
   int64 expires_at_unix = 2;
 }
 
+message GetPublicKeyRequest {
+  string user_id = 1;
+}
+
+message GetPublicKeyResponse {
+  bytes public_key = 1;
+}
+
 service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  rpc GetPublicKey(GetPublicKeyRequest) returns (GetPublicKeyResponse);
 }

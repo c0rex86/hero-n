@@ -123,6 +123,8 @@ type Store interface {
 	FindUserByUsername(ctx context.Context, username string) (*UserRecord, error)
 	CreateSession(ctx context.Context, userID string, deviceID string, refreshHash []byte, expiresAt time.Time) (string, error)
 	GetSessionByRefreshHash(ctx context.Context, refreshHash []byte) (string, string, time.Time, error)
+	WriteAudit(ctx context.Context, userID, deviceID, eventType string) error
+	GetPublicKey(ctx context.Context, userID string) ([]byte, error)
 }
 
 var ErrInvalidCredentials = errors.New("invalid credentials")
@@ -203,6 +205,10 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string, deviceID str
 	tok, exp, err := s.issuer.Issue(userID, deviceID, now)
 	if err != nil { return "", time.Time{}, err }
 	return tok, exp, nil
+}
+
+func (s *Service) GetPublicKey(ctx context.Context, userID string) ([]byte, error) {
+	return s.store.GetPublicKey(ctx, userID)
 }
 
 // helpers

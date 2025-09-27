@@ -2,12 +2,20 @@ package messaging
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"time"
 )
 
+type PublicKeyProvider interface {
+	GetPublicKey(ctx context.Context, userID string) ([]byte, error)
+}
+
 type Service struct {
-	q *Queue
+	q  *Queue
+	kp PublicKeyProvider
 }
 
 type EnvelopeData struct {
@@ -16,15 +24,25 @@ type EnvelopeData struct {
 	Ciphertext     []byte `json:"ciphertext"`
 	Signature      []byte `json:"signature"`
 	SentAtUnix     int64  `json:"sent_at_unix"`
+	SenderID       string `json:"sender_id"`
 }
 
-func NewService(q *Queue) *Service { return &Service{q: q} }
+func NewService(q *Queue, kp PublicKeyProvider) *Service { return &Service{q: q, kp: kp} }
 
 func (s *Service) Send(ctx context.Context, envelope []byte) error {
 	var env EnvelopeData
 	if err := json.Unmarshal(envelope, &env); err != nil {
-		// fallback for raw envelope
-		return s.q.Enqueue(ctx, "default", stringHash(envelope), envelope, time.Now())
+		return err
+	}
+	if env.ConversationID == "" || env.MessageID == "" { return errors.New("missing ids") }
+	if len(env.Signature) == 0 { return errors.New("missing signature") }
+	if env.SenderID == "" { return errors.New("missing sender") }
+	pk, err := s.kp.GetPublicKey(ctx, env.SenderID)
+	if err != nil { return err }
+	if len(pk) != ed25519.PublicKeySize { return errors.New("invalid public key") }
+	payload := signPayload(env)
+	if !ed25519.Verify(ed25519.PublicKey(pk), payload, env.Signature) {
+		return errors.New("bad signature")
 	}
 	sentAt := time.Unix(env.SentAtUnix, 0)
 	return s.q.Enqueue(ctx, env.ConversationID, env.MessageID, envelope, sentAt)
@@ -34,15 +52,17 @@ func (s *Service) Pull(ctx context.Context, conversationID string, since int64) 
 	return s.q.PullSince(ctx, conversationID, since, 100)
 }
 
-func stringHash(b []byte) string {
-	var h uint64
-	for _, v := range b { h = h*131 + uint64(v) }
-	return toHex(h)
+func (s *Service) PullPage(ctx context.Context, conversationID string, since int64, limit int) ([][]byte, int64, bool, error) {
+	return s.q.PullPage(ctx, conversationID, since, limit)
 }
 
-func toHex(v uint64) string {
-	const hexdigits = "0123456789abcdef"
-	buf := make([]byte, 16)
-	for i := 15; i >= 0; i-- { buf[i] = hexdigits[v&0xf]; v >>= 4 }
-	return string(buf)
+func signPayload(e EnvelopeData) []byte {
+	b := make([]byte, 0, len(e.ConversationID)+len(e.MessageID)+8+len(e.Ciphertext))
+	b = append(b, []byte(e.ConversationID)...)
+	b = append(b, []byte(e.MessageID)...)
+	var ts [8]byte
+	binary.BigEndian.PutUint64(ts[:], uint64(e.SentAtUnix))
+	b = append(b, ts[:]...)
+	b = append(b, e.Ciphertext...)
+	return b
 }

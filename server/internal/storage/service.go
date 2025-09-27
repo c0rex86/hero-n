@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"dev.c0rex64.heroin/internal/ipfs"
+	"lukechampine.com/blake3"
 )
 
 type Service struct {
@@ -84,16 +85,8 @@ func generateFileID() string {
 }
 
 func blake3Sum(b []byte) []byte {
-	// simple placeholder, TODO: replace with real blake3 hash computation
-	// use sha256 as temp to avoid pulling blake3 dep right now
-	// replace with a proper blake3 library in the next step
-	return pseudoHash(b)
-}
-
-func pseudoHash(b []byte) []byte {
-	var h uint64
-	for _, v := range b { h = h*131 + uint64(v) }
+	s := blake3.Sum256(b)
 	out := make([]byte, 32)
-	for i := 0; i < 32; i++ { out[i] = byte(h >> uint((i%8)*8)) }
+	copy(out, s[:])
 	return out
 }

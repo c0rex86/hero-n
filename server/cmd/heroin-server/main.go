@@ -35,7 +35,7 @@ func main() {
 	gs, err := grpcapi.New(cfg.Server.Listen.TCP)
 	if err != nil { log.Fatalf("grpc: %v", err) }
 	gs.AuthSvc = services.Auth
-	gs.WireStorageAndMessaging(cfg.IPFS.Endpoint, cfg.IPFS.PinningEnabled, cfg.IPFS.ReplicationFactor, db.SQL)
+	gs.WireStorageAndMessaging(cfg.IPFS.Endpoint, cfg.IPFS.PinningEnabled, cfg.IPFS.ReplicationFactor, db.SQL, services)
 
 	hs := httpapi.New(":8081")
 	go func() { _ = hs.Start() }()

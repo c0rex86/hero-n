@@ -8,6 +8,7 @@ message Envelope {
   bytes ciphertext = 3;
   bytes signature = 4;
   int64 sent_at_unix = 5;
+  string sender_id = 6;
 }
 
 message SendRequest {
@@ -21,10 +22,13 @@ message SendResponse {
 message PullRequest {
   string conversation_id = 1;
   int64 since_unix = 2;
+  int32 page_size = 3;
 }
 
 message PullResponse {
   repeated Envelope envelopes = 1;
+  int64 next_since_unix = 2;
+  bool has_more = 3;
 }
 
 service MessagingService {

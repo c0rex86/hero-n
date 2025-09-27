@@ -28,6 +28,7 @@ type Envelope struct {
 	Ciphertext     []byte                 `protobuf:"bytes,3,opt,name=ciphertext,proto3" json:"ciphertext,omitempty"`
 	Signature      []byte                 `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
 	SentAtUnix     int64                  `protobuf:"varint,5,opt,name=sent_at_unix,json=sentAtUnix,proto3" json:"sent_at_unix,omitempty"`
+	SenderId       string                 `protobuf:"bytes,6,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -95,6 +96,13 @@ func (x *Envelope) GetSentAtUnix() int64 {
 		return x.SentAtUnix
 	}
 	return 0
+}
+
+func (x *Envelope) GetSenderId() string {
+	if x != nil {
+		return x.SenderId
+	}
+	return ""
 }
 
 type SendRequest struct {
@@ -189,6 +197,7 @@ type PullRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
 	SinceUnix      int64                  `protobuf:"varint,2,opt,name=since_unix,json=sinceUnix,proto3" json:"since_unix,omitempty"`
+	PageSize       int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -237,9 +246,18 @@ func (x *PullRequest) GetSinceUnix() int64 {
 	return 0
 }
 
+func (x *PullRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
 type PullResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Envelopes     []*Envelope            `protobuf:"bytes,1,rep,name=envelopes,proto3" json:"envelopes,omitempty"`
+	NextSinceUnix int64                  `protobuf:"varint,2,opt,name=next_since_unix,json=nextSinceUnix,proto3" json:"next_since_unix,omitempty"`
+	HasMore       bool                   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -281,11 +299,25 @@ func (x *PullResponse) GetEnvelopes() []*Envelope {
 	return nil
 }
 
+func (x *PullResponse) GetNextSinceUnix() int64 {
+	if x != nil {
+		return x.NextSinceUnix
+	}
+	return 0
+}
+
+func (x *PullResponse) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
+}
+
 var File_shared_proto_messaging_v1_messaging_proto protoreflect.FileDescriptor
 
 const file_shared_proto_messaging_v1_messaging_proto_rawDesc = "" +
 	"\n" +
-	")shared/proto/messaging/v1/messaging.proto\x12\fmessaging.v1\"\xb2\x01\n" +
+	")shared/proto/messaging/v1/messaging.proto\x12\fmessaging.v1\"\xcf\x01\n" +
 	"\bEnvelope\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1d\n" +
 	"\n" +
@@ -295,17 +327,21 @@ const file_shared_proto_messaging_v1_messaging_proto_rawDesc = "" +
 	"ciphertext\x12\x1c\n" +
 	"\tsignature\x18\x04 \x01(\fR\tsignature\x12 \n" +
 	"\fsent_at_unix\x18\x05 \x01(\x03R\n" +
-	"sentAtUnix\"A\n" +
+	"sentAtUnix\x12\x1b\n" +
+	"\tsender_id\x18\x06 \x01(\tR\bsenderId\"A\n" +
 	"\vSendRequest\x122\n" +
 	"\benvelope\x18\x01 \x01(\v2\x16.messaging.v1.EnvelopeR\benvelope\"*\n" +
 	"\fSendResponse\x12\x1a\n" +
-	"\baccepted\x18\x01 \x01(\bR\baccepted\"U\n" +
+	"\baccepted\x18\x01 \x01(\bR\baccepted\"r\n" +
 	"\vPullRequest\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1d\n" +
 	"\n" +
-	"since_unix\x18\x02 \x01(\x03R\tsinceUnix\"D\n" +
+	"since_unix\x18\x02 \x01(\x03R\tsinceUnix\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\x87\x01\n" +
 	"\fPullResponse\x124\n" +
-	"\tenvelopes\x18\x01 \x03(\v2\x16.messaging.v1.EnvelopeR\tenvelopes2\x90\x01\n" +
+	"\tenvelopes\x18\x01 \x03(\v2\x16.messaging.v1.EnvelopeR\tenvelopes\x12&\n" +
+	"\x0fnext_since_unix\x18\x02 \x01(\x03R\rnextSinceUnix\x12\x19\n" +
+	"\bhas_more\x18\x03 \x01(\bR\ahasMore2\x90\x01\n" +
 	"\x10MessagingService\x12=\n" +
 	"\x04Send\x12\x19.messaging.v1.SendRequest\x1a\x1a.messaging.v1.SendResponse\x12=\n" +
 	"\x04Pull\x12\x19.messaging.v1.PullRequest\x1a\x1a.messaging.v1.PullResponseB4Z2dev.c0rex64.heroin/shared/proto/messaging/v1;msgv1b\x06proto3"

@@ -2,15 +2,20 @@ package grpcapi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	authv1 "dev.c0rex64.heroin/internal/gen/shared/proto/auth/v1"
 	msgv1 "dev.c0rex64.heroin/internal/gen/shared/proto/messaging/v1"
 	stgv1 "dev.c0rex64.heroin/internal/gen/shared/proto/storage/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
 )
 
 type Server struct {
@@ -30,11 +35,13 @@ type AuthService interface {
 	Register(ctx context.Context, username string, passwordProof []byte, clientPub []byte) (string, error)
 	Login(ctx context.Context, username string, passwordProof []byte, deviceID string, secondCode string, now time.Time) (string, string, time.Time, error)
 	Refresh(ctx context.Context, refreshToken string, deviceID string, now time.Time) (string, time.Time, error)
+	GetPublicKey(ctx context.Context, userID string) ([]byte, error)
 }
 
 type MessagingService interface {
 	Send(ctx context.Context, envelope []byte) error
 	Pull(ctx context.Context, conversationID string, since int64) ([][]byte, error)
+	PullPage(ctx context.Context, conversationID string, since int64, limit int) ([][]byte, int64, bool, error)
 }
 
 type StorageService interface {
@@ -42,10 +49,43 @@ type StorageService interface {
 	GetCAR(ctx context.Context, cid string) ([][]byte, error)
 }
 
+var (
+	rateMu sync.Mutex
+	rateMap = map[string][]time.Time{}
+)
+
+func rateLimitUnaryInterceptor(maxPerMinute int) grpc.UnaryServerInterceptor {
+	window := time.Minute
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		p, _ := peer.FromContext(ctx)
+		key := "unknown"
+		if p != nil && p.Addr != nil { key = p.Addr.String() }
+		if isAuthMethod(info.FullMethod) {
+			rateMu.Lock()
+			t := time.Now()
+			v := rateMap[key]
+			var vv []time.Time
+			for _, ts := range v { if t.Sub(ts) < window { vv = append(vv, ts) } }
+			if len(vv) >= maxPerMinute {
+				rateMu.Unlock()
+				return nil, status.Error(codes.ResourceExhausted, "rate limit")
+			}
+			vv = append(vv, t)
+			rateMap[key] = vv
+			rateMu.Unlock()
+		}
+		return handler(ctx, req)
+	}
+}
+
+func isAuthMethod(method string) bool {
+	return method == "/auth.v1.AuthService/Login" || method == "/auth.v1.AuthService/Register" || method == "/auth.v1.AuthService/Refresh" || method == "/auth.v1.AuthService/GetPublicKey"
+}
+
 func New(addr string) (*Server, error) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil { return nil, fmt.Errorf("listen: %w", err) }
-	s := &Server{gs: grpc.NewServer(), lis: lis}
+	s := &Server{gs: grpc.NewServer(grpc.UnaryInterceptor(rateLimitUnaryInterceptor(60))), lis: lis}
 	authv1.RegisterAuthServiceServer(s.gs, s)
 	msgv1.RegisterMessagingServiceServer(s.gs, s)
 	stgv1.RegisterStorageServiceServer(s.gs, s)
@@ -79,23 +119,34 @@ func (s *Server) Refresh(ctx context.Context, req *authv1.RefreshRequest) (*auth
 	return &authv1.RefreshResponse{AccessToken: tok, ExpiresAtUnix: exp.Unix()}, nil
 }
 
+func (s *Server) GetPublicKey(ctx context.Context, req *authv1.GetPublicKeyRequest) (*authv1.GetPublicKeyResponse, error) {
+	pk, err := s.AuthSvc.GetPublicKey(ctx, req.UserId)
+	if err != nil { return nil, err }
+	return &authv1.GetPublicKeyResponse{PublicKey: pk}, nil
+}
+
 // Messaging
 
 func (s *Server) Send(ctx context.Context, req *msgv1.SendRequest) (*msgv1.SendResponse, error) {
-	b := []byte{}
-	b = append(b, req.Envelope.Ciphertext...)
+	b, err := json.Marshal(req.Envelope)
+	if err != nil { return nil, err }
 	if err := s.MessagingSvc.Send(ctx, b); err != nil { return nil, err }
 	return &msgv1.SendResponse{Accepted: true}, nil
 }
 
 func (s *Server) Pull(ctx context.Context, req *msgv1.PullRequest) (*msgv1.PullResponse, error) {
-	envs, err := s.MessagingSvc.Pull(ctx, req.ConversationId, req.SinceUnix)
+	limit := int(req.PageSize)
+	if limit <= 0 { limit = 100 }
+	envs, next, more, err := s.MessagingSvc.PullPage(ctx, req.ConversationId, req.SinceUnix, limit)
 	if err != nil { return nil, err }
 	out := make([]*msgv1.Envelope, 0, len(envs))
 	for _, b := range envs {
-		out = append(out, &msgv1.Envelope{Ciphertext: b})
+		var e msgv1.Envelope
+		if json.Unmarshal(b, &e) == nil {
+			out = append(out, &e)
+		}
 	}
-	return &msgv1.PullResponse{Envelopes: out}, nil
+	return &msgv1.PullResponse{Envelopes: out, NextSinceUnix: next, HasMore: more}, nil
 }
 
 // Storage

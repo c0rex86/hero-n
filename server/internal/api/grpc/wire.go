@@ -6,11 +6,21 @@ import (
 
 	"dev.c0rex64.heroin/internal/auth"
 	"dev.c0rex64.heroin/internal/config"
+	"dev.c0rex64.heroin/internal/messaging"
 	"dev.c0rex64.heroin/internal/store"
 )
 
 type Services struct {
 	Auth *auth.Service
+	pk   KeyProvider
+}
+
+type KeyProvider interface {
+	GetPublicKey(ctx context.Context, userID string) ([]byte, error)
+}
+
+func (s *Services) GetPublicKey(ctx context.Context, userID string) ([]byte, error) {
+	return s.pk.GetPublicKey(ctx, userID)
 }
 
 func BuildServices(ctx context.Context, cfg *config.Config, db *store.DB) (*Services, error) {
@@ -20,5 +30,6 @@ func BuildServices(ctx context.Context, cfg *config.Config, db *store.DB) (*Serv
 	second := auth.NewSecondaryFactor(cfg.PasetoKey(), cfg.Security.SecondaryKey.Length, cfg.Security.SecondaryKey.RotateMinutes, cfg.Security.SecondaryKey.AllowedClockSkewSec)
 	refreshTTL := time.Duration(cfg.Security.Token.RefreshDays) * 24 * time.Hour
 	as := auth.NewService(repo, h, issuer, second, refreshTTL)
-	return &Services{Auth: as}, nil
+	_ = messaging.NewQueue(db.SQL)
+	return &Services{Auth: as, pk: repo}, nil
 }

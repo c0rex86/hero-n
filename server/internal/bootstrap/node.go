@@ -11,12 +11,14 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	"github.com/multiformats/go-multiaddr"
+	"github.com/libp2p/go-libp2p-kad-dht"
 )
 
 type Node struct {
 	host      host.Host
 	discovery mdns.Service
 	relay     *relay.Relay
+	dht       *dht.IpfsDHT
 }
 
 type Config struct {
@@ -28,39 +30,46 @@ type Config struct {
 
 func NewNode(ctx context.Context, cfg Config) (*Node, error) {
 	var opts []libp2p.Option
-	
 	for _, addr := range cfg.ListenAddrs {
 		ma, err := multiaddr.NewMultiaddr(addr)
 		if err != nil { return nil, fmt.Errorf("invalid listen addr %s: %w", addr, err) }
 		opts = append(opts, libp2p.ListenAddrs(ma))
 	}
-	
+	// enable AutoRelay and AutoNAT services
+	opts = append(opts, libp2p.EnableAutoRelay())
+	opts = append(opts, libp2p.EnableNATService())
+
 	h, err := libp2p.New(opts...)
 	if err != nil { return nil, fmt.Errorf("create libp2p host: %w", err) }
-	
+
 	n := &Node{host: h}
-	
+
 	if cfg.EnableRelay {
 		r, err := relay.New(h)
 		if err != nil { return nil, fmt.Errorf("create relay: %w", err) }
 		n.relay = r
 	}
-	
+
 	if cfg.EnableMDNS {
 		disc := mdns.NewMdnsService(h, "heroin", &discoveryNotifee{})
 		if err := disc.Start(); err != nil { return nil, fmt.Errorf("start mdns: %w", err) }
 		n.discovery = disc
 	}
-	
+
+	// start DHT for peer discovery
+	dhtNode, err := dht.New(ctx, h)
+	if err != nil { return nil, fmt.Errorf("start dht: %w", err) }
+	n.dht = dhtNode
+
 	if err := n.connectBootstrapPeers(ctx, cfg.BootstrapPeers); err != nil {
 		log.Printf("bootstrap connect failed: %v", err)
 	}
-	
+
 	log.Printf("libp2p node started, peer id: %s", h.ID())
 	for _, addr := range h.Addrs() {
 		log.Printf("listening on: %s/p2p/%s", addr, h.ID())
 	}
-	
+
 	return n, nil
 }
 
@@ -82,6 +91,7 @@ func (n *Node) connectBootstrapPeers(ctx context.Context, peers []string) error 
 func (n *Node) Close() error {
 	if n.discovery != nil { n.discovery.Close() }
 	if n.relay != nil { n.relay.Close() }
+	if n.dht != nil { n.dht.Close() }
 	return n.host.Close()
 }
 

@@ -7,11 +7,11 @@ import (
 	"database/sql"
 )
 
-func (s *Server) WireStorageAndMessaging(ipfsEndpoint string, pin bool, replicas int, db *sql.DB) {
+func (s *Server) WireStorageAndMessaging(ipfsEndpoint string, pin bool, replicas int, db *sql.DB, kp KeyProvider) {
 	ic := ipfs.New(ipfsEndpoint)
 	st := storage.NewWithDB(ic, pin, replicas, db)
 	q := messaging.NewQueue(db)
-	ms := messaging.NewService(q)
+	ms := messaging.NewService(q, kp)
 	s.StorageSvc = st
 	s.MessagingSvc = ms
 }
