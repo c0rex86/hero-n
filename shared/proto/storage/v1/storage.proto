@@ -1,0 +1,32 @@
+syntax = "proto3";
+package storage.v1;
+option go_package = "dev.c0rex64.heroin/shared/proto/storage/v1;stgv1";
+
+message PutFileRequest {
+  string name = 1;
+  string mime = 2;
+  int64 size_bytes = 3;
+  bytes encrypted_car_chunk = 4;
+  bool last_chunk = 5;
+  bytes total_blake3 = 6;
+}
+
+message PutFileResponse {
+  bool accepted = 1;
+  string file_id = 2;
+  string cid = 3;
+}
+
+message GetFileRequest {
+  string cid = 1;
+}
+
+message GetFileResponse {
+  bytes encrypted_car_chunk = 1;
+  bool last_chunk = 2;
+}
+
+service StorageService {
+  rpc PutFile(stream PutFileRequest) returns (PutFileResponse);
+  rpc GetFile(GetFileRequest) returns (stream GetFileResponse);
+}

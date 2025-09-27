@@ -1,0 +1,42 @@
+syntax = "proto3";
+package auth.v1;
+option go_package = "dev.c0rex64.heroin/shared/proto/auth/v1;authv1";
+
+message RegisterRequest {
+  string username = 1;
+  bytes password_proof = 2;
+  bytes client_pubkey = 3;
+}
+
+message RegisterResponse {
+  string user_id = 1;
+}
+
+message LoginRequest {
+  string username = 1;
+  bytes password_proof = 2;
+  string secondary_code = 3;
+  string device_id = 4;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_at_unix = 3;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+  string device_id = 2;
+}
+
+message RefreshResponse {
+  string access_token = 1;
+  int64 expires_at_unix = 2;
+}
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
+}

@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  ipfs:
+    image: ipfs/kubo:v0.24.0
+    container_name: heroin-ipfs
+    environment:
+      - IPFS_PROFILE=server
+    ports:
+      - "4001:4001"     # p2p
+      - "5001:5001"     # api
+      - "8081:8080"     # gateway
+    volumes:
+      - ipfs_data:/data/ipfs
+    command: |
+      sh -c "
+        ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '[\"*\"]'
+        ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '[\"PUT\", \"POST\", \"GET\"]'
+        ipfs daemon --migrate=true --agent-version-suffix=docker
+      "
+
+  heroin-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    container_name: heroin-server
+    environment:
+      - HEROIN_CONFIG=/app/config.yaml
+    ports:
+      - "8080:8080"     # grpc
+      - "8082:8081"     # http
+      - "9090:9090"     # metrics
+    volumes:
+      - ./config.local.yaml:/app/config.yaml
+      - heroin_data:/app/data
+    depends_on:
+      - ipfs
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: heroin-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: heroin-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  ipfs_data:
+  heroin_data:
+  prometheus_data:
+  grafana_data:

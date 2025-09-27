@@ -1,0 +1,22 @@
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /app
+COPY server/go.mod server/go.sum ./
+RUN go mod download
+
+COPY server/ ./
+COPY shared/ ../shared/
+
+RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o heroin-server ./cmd/heroin-server
+
+FROM alpine:3.18
+
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /root/
+
+COPY --from=builder /app/heroin-server .
+COPY --from=builder /app/configs/config.example.yaml ./config.yaml
+
+EXPOSE 8080 8443 9090
+
+CMD ["./heroin-server"]

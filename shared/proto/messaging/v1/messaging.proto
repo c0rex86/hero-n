@@ -1,0 +1,33 @@
+syntax = "proto3";
+package messaging.v1;
+option go_package = "dev.c0rex64.heroin/shared/proto/messaging/v1;msgv1";
+
+message Envelope {
+  string conversation_id = 1;
+  string message_id = 2;
+  bytes ciphertext = 3;
+  bytes signature = 4;
+  int64 sent_at_unix = 5;
+}
+
+message SendRequest {
+  Envelope envelope = 1;
+}
+
+message SendResponse {
+  bool accepted = 1;
+}
+
+message PullRequest {
+  string conversation_id = 1;
+  int64 since_unix = 2;
+}
+
+message PullResponse {
+  repeated Envelope envelopes = 1;
+}
+
+service MessagingService {
+  rpc Send(SendRequest) returns (SendResponse);
+  rpc Pull(PullRequest) returns (PullResponse);
+}
