@@ -10,9 +10,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
+	"dev.c0rex64.heroin/internal/crypto"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -113,6 +115,7 @@ type UserRecord struct {
 	Username           string
 	ServerSalt         []byte
 	PasswordHash       []byte
+	Verifier           []byte
 	PublicKey          []byte
 	SecondFactorSecret []byte
 	CreatedAt          int64
@@ -137,6 +140,7 @@ type Service struct {
 	issuer     TokenIssuer
 	second     SecondaryFactor
 	refreshTTL time.Duration
+	srp        *crypto.SRP
 }
 
 type AuditHook interface {
@@ -145,7 +149,44 @@ type AuditHook interface {
 }
 
 func NewService(store Store, hasher PasswordHasher, issuer TokenIssuer, second SecondaryFactor, refreshTTL time.Duration) *Service {
-	return &Service{store: store, hasher: hasher, issuer: issuer, second: second, refreshTTL: refreshTTL}
+	return &Service{
+		store: store, hasher: hasher, issuer: issuer, second: second, refreshTTL: refreshTTL,
+		srp: crypto.NewSRP(),
+	}
+}
+
+func (s *Service) RegisterSRP(ctx context.Context, username string, password string, salt []byte, verifier []byte) error {
+	id := generateUUIDv7()
+	secret := randomStrongBytes(32)
+	u := &UserRecord{
+		ID:                 id,
+		Username:           username,
+		ServerSalt:         salt,
+		Verifier:           verifier,
+		PublicKey:          nil,
+		SecondFactorSecret: secret,
+		CreatedAt:          time.Now().Unix(),
+	}
+	return s.store.CreateUser(ctx, *u)
+}
+
+func (s *Service) LoginSRP(ctx context.Context, username string, clientPub []byte, challengeProof []byte) ([]byte, error) {
+	user, err := s.store.FindUserByUsername(ctx, username)
+	if err != nil { return nil, err }
+
+	salt := user.ServerSalt
+	verifier := new(big.Int).SetBytes(user.Verifier)
+
+	srvSession, err := s.srp.NewServerSession(username, salt, verifier)
+	if err != nil { return nil, err }
+
+	A := new(big.Int).SetBytes(clientPub)
+	M1 := challengeProof
+
+	M2, err := srvSession.VerifyClientProof(A, M1)
+	if err != nil { return nil, err }
+
+	return M2, nil
 }
 
 func (s *Service) Register(ctx context.Context, username string, passwordProof []byte, clientPub []byte) (string, error) {

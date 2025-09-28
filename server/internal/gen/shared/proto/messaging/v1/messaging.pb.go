@@ -29,6 +29,7 @@ type Envelope struct {
 	Signature      []byte                 `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
 	SentAtUnix     int64                  `protobuf:"varint,5,opt,name=sent_at_unix,json=sentAtUnix,proto3" json:"sent_at_unix,omitempty"`
 	SenderId       string                 `protobuf:"bytes,6,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
+	IsGroup        bool                   `protobuf:"varint,7,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"` // флаг группового сообщения
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -105,9 +106,16 @@ func (x *Envelope) GetSenderId() string {
 	return ""
 }
 
+func (x *Envelope) GetIsGroup() bool {
+	if x != nil {
+		return x.IsGroup
+	}
+	return false
+}
+
 type SendRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Envelope      *Envelope              `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
+	Envelope      []byte                 `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -142,7 +150,7 @@ func (*SendRequest) Descriptor() ([]byte, []int) {
 	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SendRequest) GetEnvelope() *Envelope {
+func (x *SendRequest) GetEnvelope() []byte {
 	if x != nil {
 		return x.Envelope
 	}
@@ -151,7 +159,7 @@ func (x *SendRequest) GetEnvelope() *Envelope {
 
 type SendResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Accepted      bool                   `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -186,9 +194,9 @@ func (*SendResponse) Descriptor() ([]byte, []int) {
 	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SendResponse) GetAccepted() bool {
+func (x *SendResponse) GetSuccess() bool {
 	if x != nil {
-		return x.Accepted
+		return x.Success
 	}
 	return false
 }
@@ -313,11 +321,1005 @@ func (x *PullResponse) GetHasMore() bool {
 	return false
 }
 
+// группы
+type CreateGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGroupRequest) Reset() {
+	*x = CreateGroupRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGroupRequest) ProtoMessage() {}
+
+func (x *CreateGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGroupRequest.ProtoReflect.Descriptor instead.
+func (*CreateGroupRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateGroupRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type CreateGroupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	EncryptedKey  []byte                 `protobuf:"bytes,2,opt,name=encrypted_key,json=encryptedKey,proto3" json:"encrypted_key,omitempty"` // групповой ключ зашифрованный для создателя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGroupResponse) Reset() {
+	*x = CreateGroupResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGroupResponse) ProtoMessage() {}
+
+func (x *CreateGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGroupResponse.ProtoReflect.Descriptor instead.
+func (*CreateGroupResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CreateGroupResponse) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *CreateGroupResponse) GetEncryptedKey() []byte {
+	if x != nil {
+		return x.EncryptedKey
+	}
+	return nil
+}
+
+type AddGroupMemberRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddGroupMemberRequest) Reset() {
+	*x = AddGroupMemberRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddGroupMemberRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddGroupMemberRequest) ProtoMessage() {}
+
+func (x *AddGroupMemberRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddGroupMemberRequest.ProtoReflect.Descriptor instead.
+func (*AddGroupMemberRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AddGroupMemberRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *AddGroupMemberRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type AddGroupMemberResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddGroupMemberResponse) Reset() {
+	*x = AddGroupMemberResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddGroupMemberResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddGroupMemberResponse) ProtoMessage() {}
+
+func (x *AddGroupMemberResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddGroupMemberResponse.ProtoReflect.Descriptor instead.
+func (*AddGroupMemberResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *AddGroupMemberResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type RemoveGroupMemberRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveGroupMemberRequest) Reset() {
+	*x = RemoveGroupMemberRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveGroupMemberRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveGroupMemberRequest) ProtoMessage() {}
+
+func (x *RemoveGroupMemberRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveGroupMemberRequest.ProtoReflect.Descriptor instead.
+func (*RemoveGroupMemberRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RemoveGroupMemberRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *RemoveGroupMemberRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type RemoveGroupMemberResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveGroupMemberResponse) Reset() {
+	*x = RemoveGroupMemberResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveGroupMemberResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveGroupMemberResponse) ProtoMessage() {}
+
+func (x *RemoveGroupMemberResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveGroupMemberResponse.ProtoReflect.Descriptor instead.
+func (*RemoveGroupMemberResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RemoveGroupMemberResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type GetGroupsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGroupsRequest) Reset() {
+	*x = GetGroupsRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGroupsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGroupsRequest) ProtoMessage() {}
+
+func (x *GetGroupsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGroupsRequest.ProtoReflect.Descriptor instead.
+func (*GetGroupsRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{11}
+}
+
+type Group struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreatorId     string                 `protobuf:"bytes,3,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
+	CreatedAtUnix int64                  `protobuf:"varint,4,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	MemberCount   int32                  `protobuf:"varint,5,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
+	EncryptedKey  []byte                 `protobuf:"bytes,6,opt,name=encrypted_key,json=encryptedKey,proto3" json:"encrypted_key,omitempty"` // ключ группы для юзера
+	KeyVersion    int32                  `protobuf:"varint,7,opt,name=key_version,json=keyVersion,proto3" json:"key_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Group) Reset() {
+	*x = Group{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Group) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Group) ProtoMessage() {}
+
+func (x *Group) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Group.ProtoReflect.Descriptor instead.
+func (*Group) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Group) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Group) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Group) GetCreatorId() string {
+	if x != nil {
+		return x.CreatorId
+	}
+	return ""
+}
+
+func (x *Group) GetCreatedAtUnix() int64 {
+	if x != nil {
+		return x.CreatedAtUnix
+	}
+	return 0
+}
+
+func (x *Group) GetMemberCount() int32 {
+	if x != nil {
+		return x.MemberCount
+	}
+	return 0
+}
+
+func (x *Group) GetEncryptedKey() []byte {
+	if x != nil {
+		return x.EncryptedKey
+	}
+	return nil
+}
+
+func (x *Group) GetKeyVersion() int32 {
+	if x != nil {
+		return x.KeyVersion
+	}
+	return 0
+}
+
+type GetGroupsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Groups        []*Group               `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGroupsResponse) Reset() {
+	*x = GetGroupsResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGroupsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGroupsResponse) ProtoMessage() {}
+
+func (x *GetGroupsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGroupsResponse.ProtoReflect.Descriptor instead.
+func (*GetGroupsResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetGroupsResponse) GetGroups() []*Group {
+	if x != nil {
+		return x.Groups
+	}
+	return nil
+}
+
+type GetGroupMembersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGroupMembersRequest) Reset() {
+	*x = GetGroupMembersRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGroupMembersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGroupMembersRequest) ProtoMessage() {}
+
+func (x *GetGroupMembersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGroupMembersRequest.ProtoReflect.Descriptor instead.
+func (*GetGroupMembersRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetGroupMembersRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+type GroupMember struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Role          string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"` // admin или member
+	JoinedAtUnix  int64                  `protobuf:"varint,3,opt,name=joined_at_unix,json=joinedAtUnix,proto3" json:"joined_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GroupMember) Reset() {
+	*x = GroupMember{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GroupMember) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GroupMember) ProtoMessage() {}
+
+func (x *GroupMember) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GroupMember.ProtoReflect.Descriptor instead.
+func (*GroupMember) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GroupMember) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GroupMember) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *GroupMember) GetJoinedAtUnix() int64 {
+	if x != nil {
+		return x.JoinedAtUnix
+	}
+	return 0
+}
+
+type GetGroupMembersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Members       []*GroupMember         `protobuf:"bytes,1,rep,name=members,proto3" json:"members,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGroupMembersResponse) Reset() {
+	*x = GetGroupMembersResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGroupMembersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGroupMembersResponse) ProtoMessage() {}
+
+func (x *GetGroupMembersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGroupMembersResponse.ProtoReflect.Descriptor instead.
+func (*GetGroupMembersResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetGroupMembersResponse) GetMembers() []*GroupMember {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+// p2p и routing
+type GetActivePeersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetActivePeersRequest) Reset() {
+	*x = GetActivePeersRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetActivePeersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetActivePeersRequest) ProtoMessage() {}
+
+func (x *GetActivePeersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetActivePeersRequest.ProtoReflect.Descriptor instead.
+func (*GetActivePeersRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{17}
+}
+
+type GetActivePeersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PeerIds       []string               `protobuf:"bytes,1,rep,name=peer_ids,json=peerIds,proto3" json:"peer_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetActivePeersResponse) Reset() {
+	*x = GetActivePeersResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetActivePeersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetActivePeersResponse) ProtoMessage() {}
+
+func (x *GetActivePeersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetActivePeersResponse.ProtoReflect.Descriptor instead.
+func (*GetActivePeersResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetActivePeersResponse) GetPeerIds() []string {
+	if x != nil {
+		return x.PeerIds
+	}
+	return nil
+}
+
+type GetRelayChainsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRelayChainsRequest) Reset() {
+	*x = GetRelayChainsRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRelayChainsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRelayChainsRequest) ProtoMessage() {}
+
+func (x *GetRelayChainsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRelayChainsRequest.ProtoReflect.Descriptor instead.
+func (*GetRelayChainsRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{19}
+}
+
+type RelayChain struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	RelayCount    int32                  `protobuf:"varint,2,opt,name=relay_count,json=relayCount,proto3" json:"relay_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RelayChain) Reset() {
+	*x = RelayChain{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RelayChain) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RelayChain) ProtoMessage() {}
+
+func (x *RelayChain) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RelayChain.ProtoReflect.Descriptor instead.
+func (*RelayChain) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *RelayChain) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *RelayChain) GetRelayCount() int32 {
+	if x != nil {
+		return x.RelayCount
+	}
+	return 0
+}
+
+type GetRelayChainsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chains        []*RelayChain          `protobuf:"bytes,1,rep,name=chains,proto3" json:"chains,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRelayChainsResponse) Reset() {
+	*x = GetRelayChainsResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRelayChainsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRelayChainsResponse) ProtoMessage() {}
+
+func (x *GetRelayChainsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRelayChainsResponse.ProtoReflect.Descriptor instead.
+func (*GetRelayChainsResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetRelayChainsResponse) GetChains() []*RelayChain {
+	if x != nil {
+		return x.Chains
+	}
+	return nil
+}
+
+type GetRoutingMetricsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRoutingMetricsRequest) Reset() {
+	*x = GetRoutingMetricsRequest{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRoutingMetricsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRoutingMetricsRequest) ProtoMessage() {}
+
+func (x *GetRoutingMetricsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRoutingMetricsRequest.ProtoReflect.Descriptor instead.
+func (*GetRoutingMetricsRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{22}
+}
+
+type TransportMetrics struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TransportId   string                 `protobuf:"bytes,1,opt,name=transport_id,json=transportId,proto3" json:"transport_id,omitempty"`
+	LatencyMs     int32                  `protobuf:"varint,2,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	PacketLoss    float32                `protobuf:"fixed32,3,opt,name=packet_loss,json=packetLoss,proto3" json:"packet_loss,omitempty"`
+	JitterMs      int32                  `protobuf:"varint,4,opt,name=jitter_ms,json=jitterMs,proto3" json:"jitter_ms,omitempty"`
+	Stability     float32                `protobuf:"fixed32,5,opt,name=stability,proto3" json:"stability,omitempty"`
+	BlockingRisk  float32                `protobuf:"fixed32,6,opt,name=blocking_risk,json=blockingRisk,proto3" json:"blocking_risk,omitempty"`
+	Load          float32                `protobuf:"fixed32,7,opt,name=load,proto3" json:"load,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TransportMetrics) Reset() {
+	*x = TransportMetrics{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransportMetrics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransportMetrics) ProtoMessage() {}
+
+func (x *TransportMetrics) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransportMetrics.ProtoReflect.Descriptor instead.
+func (*TransportMetrics) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *TransportMetrics) GetTransportId() string {
+	if x != nil {
+		return x.TransportId
+	}
+	return ""
+}
+
+func (x *TransportMetrics) GetLatencyMs() int32 {
+	if x != nil {
+		return x.LatencyMs
+	}
+	return 0
+}
+
+func (x *TransportMetrics) GetPacketLoss() float32 {
+	if x != nil {
+		return x.PacketLoss
+	}
+	return 0
+}
+
+func (x *TransportMetrics) GetJitterMs() int32 {
+	if x != nil {
+		return x.JitterMs
+	}
+	return 0
+}
+
+func (x *TransportMetrics) GetStability() float32 {
+	if x != nil {
+		return x.Stability
+	}
+	return 0
+}
+
+func (x *TransportMetrics) GetBlockingRisk() float32 {
+	if x != nil {
+		return x.BlockingRisk
+	}
+	return 0
+}
+
+func (x *TransportMetrics) GetLoad() float32 {
+	if x != nil {
+		return x.Load
+	}
+	return 0
+}
+
+type GetRoutingMetricsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Transports    []*TransportMetrics    `protobuf:"bytes,1,rep,name=transports,proto3" json:"transports,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRoutingMetricsResponse) Reset() {
+	*x = GetRoutingMetricsResponse{}
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRoutingMetricsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRoutingMetricsResponse) ProtoMessage() {}
+
+func (x *GetRoutingMetricsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_messaging_v1_messaging_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRoutingMetricsResponse.ProtoReflect.Descriptor instead.
+func (*GetRoutingMetricsResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *GetRoutingMetricsResponse) GetTransports() []*TransportMetrics {
+	if x != nil {
+		return x.Transports
+	}
+	return nil
+}
+
 var File_shared_proto_messaging_v1_messaging_proto protoreflect.FileDescriptor
 
 const file_shared_proto_messaging_v1_messaging_proto_rawDesc = "" +
 	"\n" +
-	")shared/proto/messaging/v1/messaging.proto\x12\fmessaging.v1\"\xcf\x01\n" +
+	")shared/proto/messaging/v1/messaging.proto\x12\x13heroin.messaging.v1\"\xea\x01\n" +
 	"\bEnvelope\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1d\n" +
 	"\n" +
@@ -328,23 +1330,94 @@ const file_shared_proto_messaging_v1_messaging_proto_rawDesc = "" +
 	"\tsignature\x18\x04 \x01(\fR\tsignature\x12 \n" +
 	"\fsent_at_unix\x18\x05 \x01(\x03R\n" +
 	"sentAtUnix\x12\x1b\n" +
-	"\tsender_id\x18\x06 \x01(\tR\bsenderId\"A\n" +
-	"\vSendRequest\x122\n" +
-	"\benvelope\x18\x01 \x01(\v2\x16.messaging.v1.EnvelopeR\benvelope\"*\n" +
-	"\fSendResponse\x12\x1a\n" +
-	"\baccepted\x18\x01 \x01(\bR\baccepted\"r\n" +
+	"\tsender_id\x18\x06 \x01(\tR\bsenderId\x12\x19\n" +
+	"\bis_group\x18\a \x01(\bR\aisGroup\")\n" +
+	"\vSendRequest\x12\x1a\n" +
+	"\benvelope\x18\x01 \x01(\fR\benvelope\"(\n" +
+	"\fSendResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"r\n" +
 	"\vPullRequest\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1d\n" +
 	"\n" +
 	"since_unix\x18\x02 \x01(\x03R\tsinceUnix\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\x87\x01\n" +
-	"\fPullResponse\x124\n" +
-	"\tenvelopes\x18\x01 \x03(\v2\x16.messaging.v1.EnvelopeR\tenvelopes\x12&\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\x8e\x01\n" +
+	"\fPullResponse\x12;\n" +
+	"\tenvelopes\x18\x01 \x03(\v2\x1d.heroin.messaging.v1.EnvelopeR\tenvelopes\x12&\n" +
 	"\x0fnext_since_unix\x18\x02 \x01(\x03R\rnextSinceUnix\x12\x19\n" +
-	"\bhas_more\x18\x03 \x01(\bR\ahasMore2\x90\x01\n" +
-	"\x10MessagingService\x12=\n" +
-	"\x04Send\x12\x19.messaging.v1.SendRequest\x1a\x1a.messaging.v1.SendResponse\x12=\n" +
-	"\x04Pull\x12\x19.messaging.v1.PullRequest\x1a\x1a.messaging.v1.PullResponseB4Z2dev.c0rex64.heroin/shared/proto/messaging/v1;msgv1b\x06proto3"
+	"\bhas_more\x18\x03 \x01(\bR\ahasMore\"(\n" +
+	"\x12CreateGroupRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"U\n" +
+	"\x13CreateGroupResponse\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12#\n" +
+	"\rencrypted_key\x18\x02 \x01(\fR\fencryptedKey\"K\n" +
+	"\x15AddGroupMemberRequest\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"2\n" +
+	"\x16AddGroupMemberResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"N\n" +
+	"\x18RemoveGroupMemberRequest\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"5\n" +
+	"\x19RemoveGroupMemberResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x12\n" +
+	"\x10GetGroupsRequest\"\xdb\x01\n" +
+	"\x05Group\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"creator_id\x18\x03 \x01(\tR\tcreatorId\x12&\n" +
+	"\x0fcreated_at_unix\x18\x04 \x01(\x03R\rcreatedAtUnix\x12!\n" +
+	"\fmember_count\x18\x05 \x01(\x05R\vmemberCount\x12#\n" +
+	"\rencrypted_key\x18\x06 \x01(\fR\fencryptedKey\x12\x1f\n" +
+	"\vkey_version\x18\a \x01(\x05R\n" +
+	"keyVersion\"G\n" +
+	"\x11GetGroupsResponse\x122\n" +
+	"\x06groups\x18\x01 \x03(\v2\x1a.heroin.messaging.v1.GroupR\x06groups\"3\n" +
+	"\x16GetGroupMembersRequest\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\"`\n" +
+	"\vGroupMember\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04role\x18\x02 \x01(\tR\x04role\x12$\n" +
+	"\x0ejoined_at_unix\x18\x03 \x01(\x03R\fjoinedAtUnix\"U\n" +
+	"\x17GetGroupMembersResponse\x12:\n" +
+	"\amembers\x18\x01 \x03(\v2 .heroin.messaging.v1.GroupMemberR\amembers\"\x17\n" +
+	"\x15GetActivePeersRequest\"3\n" +
+	"\x16GetActivePeersResponse\x12\x19\n" +
+	"\bpeer_ids\x18\x01 \x03(\tR\apeerIds\"\x17\n" +
+	"\x15GetRelayChainsRequest\"=\n" +
+	"\n" +
+	"RelayChain\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vrelay_count\x18\x02 \x01(\x05R\n" +
+	"relayCount\"Q\n" +
+	"\x16GetRelayChainsResponse\x127\n" +
+	"\x06chains\x18\x01 \x03(\v2\x1f.heroin.messaging.v1.RelayChainR\x06chains\"\x1a\n" +
+	"\x18GetRoutingMetricsRequest\"\xe9\x01\n" +
+	"\x10TransportMetrics\x12!\n" +
+	"\ftransport_id\x18\x01 \x01(\tR\vtransportId\x12\x1d\n" +
+	"\n" +
+	"latency_ms\x18\x02 \x01(\x05R\tlatencyMs\x12\x1f\n" +
+	"\vpacket_loss\x18\x03 \x01(\x02R\n" +
+	"packetLoss\x12\x1b\n" +
+	"\tjitter_ms\x18\x04 \x01(\x05R\bjitterMs\x12\x1c\n" +
+	"\tstability\x18\x05 \x01(\x02R\tstability\x12#\n" +
+	"\rblocking_risk\x18\x06 \x01(\x02R\fblockingRisk\x12\x12\n" +
+	"\x04load\x18\a \x01(\x02R\x04load\"b\n" +
+	"\x19GetRoutingMetricsResponse\x12E\n" +
+	"\n" +
+	"transports\x18\x01 \x03(\v2%.heroin.messaging.v1.TransportMetricsR\n" +
+	"transports2\x81\b\n" +
+	"\x10MessagingService\x12K\n" +
+	"\x04Send\x12 .heroin.messaging.v1.SendRequest\x1a!.heroin.messaging.v1.SendResponse\x12K\n" +
+	"\x04Pull\x12 .heroin.messaging.v1.PullRequest\x1a!.heroin.messaging.v1.PullResponse\x12`\n" +
+	"\vCreateGroup\x12'.heroin.messaging.v1.CreateGroupRequest\x1a(.heroin.messaging.v1.CreateGroupResponse\x12i\n" +
+	"\x0eAddGroupMember\x12*.heroin.messaging.v1.AddGroupMemberRequest\x1a+.heroin.messaging.v1.AddGroupMemberResponse\x12r\n" +
+	"\x11RemoveGroupMember\x12-.heroin.messaging.v1.RemoveGroupMemberRequest\x1a..heroin.messaging.v1.RemoveGroupMemberResponse\x12Z\n" +
+	"\tGetGroups\x12%.heroin.messaging.v1.GetGroupsRequest\x1a&.heroin.messaging.v1.GetGroupsResponse\x12l\n" +
+	"\x0fGetGroupMembers\x12+.heroin.messaging.v1.GetGroupMembersRequest\x1a,.heroin.messaging.v1.GetGroupMembersResponse\x12i\n" +
+	"\x0eGetActivePeers\x12*.heroin.messaging.v1.GetActivePeersRequest\x1a+.heroin.messaging.v1.GetActivePeersResponse\x12i\n" +
+	"\x0eGetRelayChains\x12*.heroin.messaging.v1.GetRelayChainsRequest\x1a+.heroin.messaging.v1.GetRelayChainsResponse\x12r\n" +
+	"\x11GetRoutingMetrics\x12-.heroin.messaging.v1.GetRoutingMetricsRequest\x1a..heroin.messaging.v1.GetRoutingMetricsResponseB+Z)dev.c0rex64.heroin/api/messaging/v1;msgv1b\x06proto3"
 
 var (
 	file_shared_proto_messaging_v1_messaging_proto_rawDescOnce sync.Once
@@ -358,26 +1431,65 @@ func file_shared_proto_messaging_v1_messaging_proto_rawDescGZIP() []byte {
 	return file_shared_proto_messaging_v1_messaging_proto_rawDescData
 }
 
-var file_shared_proto_messaging_v1_messaging_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_shared_proto_messaging_v1_messaging_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_shared_proto_messaging_v1_messaging_proto_goTypes = []any{
-	(*Envelope)(nil),     // 0: messaging.v1.Envelope
-	(*SendRequest)(nil),  // 1: messaging.v1.SendRequest
-	(*SendResponse)(nil), // 2: messaging.v1.SendResponse
-	(*PullRequest)(nil),  // 3: messaging.v1.PullRequest
-	(*PullResponse)(nil), // 4: messaging.v1.PullResponse
+	(*Envelope)(nil),                  // 0: heroin.messaging.v1.Envelope
+	(*SendRequest)(nil),               // 1: heroin.messaging.v1.SendRequest
+	(*SendResponse)(nil),              // 2: heroin.messaging.v1.SendResponse
+	(*PullRequest)(nil),               // 3: heroin.messaging.v1.PullRequest
+	(*PullResponse)(nil),              // 4: heroin.messaging.v1.PullResponse
+	(*CreateGroupRequest)(nil),        // 5: heroin.messaging.v1.CreateGroupRequest
+	(*CreateGroupResponse)(nil),       // 6: heroin.messaging.v1.CreateGroupResponse
+	(*AddGroupMemberRequest)(nil),     // 7: heroin.messaging.v1.AddGroupMemberRequest
+	(*AddGroupMemberResponse)(nil),    // 8: heroin.messaging.v1.AddGroupMemberResponse
+	(*RemoveGroupMemberRequest)(nil),  // 9: heroin.messaging.v1.RemoveGroupMemberRequest
+	(*RemoveGroupMemberResponse)(nil), // 10: heroin.messaging.v1.RemoveGroupMemberResponse
+	(*GetGroupsRequest)(nil),          // 11: heroin.messaging.v1.GetGroupsRequest
+	(*Group)(nil),                     // 12: heroin.messaging.v1.Group
+	(*GetGroupsResponse)(nil),         // 13: heroin.messaging.v1.GetGroupsResponse
+	(*GetGroupMembersRequest)(nil),    // 14: heroin.messaging.v1.GetGroupMembersRequest
+	(*GroupMember)(nil),               // 15: heroin.messaging.v1.GroupMember
+	(*GetGroupMembersResponse)(nil),   // 16: heroin.messaging.v1.GetGroupMembersResponse
+	(*GetActivePeersRequest)(nil),     // 17: heroin.messaging.v1.GetActivePeersRequest
+	(*GetActivePeersResponse)(nil),    // 18: heroin.messaging.v1.GetActivePeersResponse
+	(*GetRelayChainsRequest)(nil),     // 19: heroin.messaging.v1.GetRelayChainsRequest
+	(*RelayChain)(nil),                // 20: heroin.messaging.v1.RelayChain
+	(*GetRelayChainsResponse)(nil),    // 21: heroin.messaging.v1.GetRelayChainsResponse
+	(*GetRoutingMetricsRequest)(nil),  // 22: heroin.messaging.v1.GetRoutingMetricsRequest
+	(*TransportMetrics)(nil),          // 23: heroin.messaging.v1.TransportMetrics
+	(*GetRoutingMetricsResponse)(nil), // 24: heroin.messaging.v1.GetRoutingMetricsResponse
 }
 var file_shared_proto_messaging_v1_messaging_proto_depIdxs = []int32{
-	0, // 0: messaging.v1.SendRequest.envelope:type_name -> messaging.v1.Envelope
-	0, // 1: messaging.v1.PullResponse.envelopes:type_name -> messaging.v1.Envelope
-	1, // 2: messaging.v1.MessagingService.Send:input_type -> messaging.v1.SendRequest
-	3, // 3: messaging.v1.MessagingService.Pull:input_type -> messaging.v1.PullRequest
-	2, // 4: messaging.v1.MessagingService.Send:output_type -> messaging.v1.SendResponse
-	4, // 5: messaging.v1.MessagingService.Pull:output_type -> messaging.v1.PullResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: heroin.messaging.v1.PullResponse.envelopes:type_name -> heroin.messaging.v1.Envelope
+	12, // 1: heroin.messaging.v1.GetGroupsResponse.groups:type_name -> heroin.messaging.v1.Group
+	15, // 2: heroin.messaging.v1.GetGroupMembersResponse.members:type_name -> heroin.messaging.v1.GroupMember
+	20, // 3: heroin.messaging.v1.GetRelayChainsResponse.chains:type_name -> heroin.messaging.v1.RelayChain
+	23, // 4: heroin.messaging.v1.GetRoutingMetricsResponse.transports:type_name -> heroin.messaging.v1.TransportMetrics
+	1,  // 5: heroin.messaging.v1.MessagingService.Send:input_type -> heroin.messaging.v1.SendRequest
+	3,  // 6: heroin.messaging.v1.MessagingService.Pull:input_type -> heroin.messaging.v1.PullRequest
+	5,  // 7: heroin.messaging.v1.MessagingService.CreateGroup:input_type -> heroin.messaging.v1.CreateGroupRequest
+	7,  // 8: heroin.messaging.v1.MessagingService.AddGroupMember:input_type -> heroin.messaging.v1.AddGroupMemberRequest
+	9,  // 9: heroin.messaging.v1.MessagingService.RemoveGroupMember:input_type -> heroin.messaging.v1.RemoveGroupMemberRequest
+	11, // 10: heroin.messaging.v1.MessagingService.GetGroups:input_type -> heroin.messaging.v1.GetGroupsRequest
+	14, // 11: heroin.messaging.v1.MessagingService.GetGroupMembers:input_type -> heroin.messaging.v1.GetGroupMembersRequest
+	17, // 12: heroin.messaging.v1.MessagingService.GetActivePeers:input_type -> heroin.messaging.v1.GetActivePeersRequest
+	19, // 13: heroin.messaging.v1.MessagingService.GetRelayChains:input_type -> heroin.messaging.v1.GetRelayChainsRequest
+	22, // 14: heroin.messaging.v1.MessagingService.GetRoutingMetrics:input_type -> heroin.messaging.v1.GetRoutingMetricsRequest
+	2,  // 15: heroin.messaging.v1.MessagingService.Send:output_type -> heroin.messaging.v1.SendResponse
+	4,  // 16: heroin.messaging.v1.MessagingService.Pull:output_type -> heroin.messaging.v1.PullResponse
+	6,  // 17: heroin.messaging.v1.MessagingService.CreateGroup:output_type -> heroin.messaging.v1.CreateGroupResponse
+	8,  // 18: heroin.messaging.v1.MessagingService.AddGroupMember:output_type -> heroin.messaging.v1.AddGroupMemberResponse
+	10, // 19: heroin.messaging.v1.MessagingService.RemoveGroupMember:output_type -> heroin.messaging.v1.RemoveGroupMemberResponse
+	13, // 20: heroin.messaging.v1.MessagingService.GetGroups:output_type -> heroin.messaging.v1.GetGroupsResponse
+	16, // 21: heroin.messaging.v1.MessagingService.GetGroupMembers:output_type -> heroin.messaging.v1.GetGroupMembersResponse
+	18, // 22: heroin.messaging.v1.MessagingService.GetActivePeers:output_type -> heroin.messaging.v1.GetActivePeersResponse
+	21, // 23: heroin.messaging.v1.MessagingService.GetRelayChains:output_type -> heroin.messaging.v1.GetRelayChainsResponse
+	24, // 24: heroin.messaging.v1.MessagingService.GetRoutingMetrics:output_type -> heroin.messaging.v1.GetRoutingMetricsResponse
+	15, // [15:25] is the sub-list for method output_type
+	5,  // [5:15] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_messaging_v1_messaging_proto_init() }
@@ -391,7 +1503,7 @@ func file_shared_proto_messaging_v1_messaging_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_messaging_v1_messaging_proto_rawDesc), len(file_shared_proto_messaging_v1_messaging_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

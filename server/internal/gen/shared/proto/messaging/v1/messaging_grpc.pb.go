@@ -19,8 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessagingService_Send_FullMethodName = "/messaging.v1.MessagingService/Send"
-	MessagingService_Pull_FullMethodName = "/messaging.v1.MessagingService/Pull"
+	MessagingService_Send_FullMethodName              = "/heroin.messaging.v1.MessagingService/Send"
+	MessagingService_Pull_FullMethodName              = "/heroin.messaging.v1.MessagingService/Pull"
+	MessagingService_CreateGroup_FullMethodName       = "/heroin.messaging.v1.MessagingService/CreateGroup"
+	MessagingService_AddGroupMember_FullMethodName    = "/heroin.messaging.v1.MessagingService/AddGroupMember"
+	MessagingService_RemoveGroupMember_FullMethodName = "/heroin.messaging.v1.MessagingService/RemoveGroupMember"
+	MessagingService_GetGroups_FullMethodName         = "/heroin.messaging.v1.MessagingService/GetGroups"
+	MessagingService_GetGroupMembers_FullMethodName   = "/heroin.messaging.v1.MessagingService/GetGroupMembers"
+	MessagingService_GetActivePeers_FullMethodName    = "/heroin.messaging.v1.MessagingService/GetActivePeers"
+	MessagingService_GetRelayChains_FullMethodName    = "/heroin.messaging.v1.MessagingService/GetRelayChains"
+	MessagingService_GetRoutingMetrics_FullMethodName = "/heroin.messaging.v1.MessagingService/GetRoutingMetrics"
 )
 
 // MessagingServiceClient is the client API for MessagingService service.
@@ -29,6 +37,16 @@ const (
 type MessagingServiceClient interface {
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
 	Pull(ctx context.Context, in *PullRequest, opts ...grpc.CallOption) (*PullResponse, error)
+	// группы
+	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
+	AddGroupMember(ctx context.Context, in *AddGroupMemberRequest, opts ...grpc.CallOption) (*AddGroupMemberResponse, error)
+	RemoveGroupMember(ctx context.Context, in *RemoveGroupMemberRequest, opts ...grpc.CallOption) (*RemoveGroupMemberResponse, error)
+	GetGroups(ctx context.Context, in *GetGroupsRequest, opts ...grpc.CallOption) (*GetGroupsResponse, error)
+	GetGroupMembers(ctx context.Context, in *GetGroupMembersRequest, opts ...grpc.CallOption) (*GetGroupMembersResponse, error)
+	// p2p и routing
+	GetActivePeers(ctx context.Context, in *GetActivePeersRequest, opts ...grpc.CallOption) (*GetActivePeersResponse, error)
+	GetRelayChains(ctx context.Context, in *GetRelayChainsRequest, opts ...grpc.CallOption) (*GetRelayChainsResponse, error)
+	GetRoutingMetrics(ctx context.Context, in *GetRoutingMetricsRequest, opts ...grpc.CallOption) (*GetRoutingMetricsResponse, error)
 }
 
 type messagingServiceClient struct {
@@ -59,12 +77,102 @@ func (c *messagingServiceClient) Pull(ctx context.Context, in *PullRequest, opts
 	return out, nil
 }
 
+func (c *messagingServiceClient) CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateGroupResponse)
+	err := c.cc.Invoke(ctx, MessagingService_CreateGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) AddGroupMember(ctx context.Context, in *AddGroupMemberRequest, opts ...grpc.CallOption) (*AddGroupMemberResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddGroupMemberResponse)
+	err := c.cc.Invoke(ctx, MessagingService_AddGroupMember_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) RemoveGroupMember(ctx context.Context, in *RemoveGroupMemberRequest, opts ...grpc.CallOption) (*RemoveGroupMemberResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveGroupMemberResponse)
+	err := c.cc.Invoke(ctx, MessagingService_RemoveGroupMember_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) GetGroups(ctx context.Context, in *GetGroupsRequest, opts ...grpc.CallOption) (*GetGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGroupsResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) GetGroupMembers(ctx context.Context, in *GetGroupMembersRequest, opts ...grpc.CallOption) (*GetGroupMembersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGroupMembersResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetGroupMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) GetActivePeers(ctx context.Context, in *GetActivePeersRequest, opts ...grpc.CallOption) (*GetActivePeersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetActivePeersResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetActivePeers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) GetRelayChains(ctx context.Context, in *GetRelayChainsRequest, opts ...grpc.CallOption) (*GetRelayChainsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRelayChainsResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetRelayChains_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) GetRoutingMetrics(ctx context.Context, in *GetRoutingMetricsRequest, opts ...grpc.CallOption) (*GetRoutingMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRoutingMetricsResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetRoutingMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessagingServiceServer is the server API for MessagingService service.
 // All implementations must embed UnimplementedMessagingServiceServer
 // for forward compatibility.
 type MessagingServiceServer interface {
 	Send(context.Context, *SendRequest) (*SendResponse, error)
 	Pull(context.Context, *PullRequest) (*PullResponse, error)
+	// группы
+	CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
+	AddGroupMember(context.Context, *AddGroupMemberRequest) (*AddGroupMemberResponse, error)
+	RemoveGroupMember(context.Context, *RemoveGroupMemberRequest) (*RemoveGroupMemberResponse, error)
+	GetGroups(context.Context, *GetGroupsRequest) (*GetGroupsResponse, error)
+	GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error)
+	// p2p и routing
+	GetActivePeers(context.Context, *GetActivePeersRequest) (*GetActivePeersResponse, error)
+	GetRelayChains(context.Context, *GetRelayChainsRequest) (*GetRelayChainsResponse, error)
+	GetRoutingMetrics(context.Context, *GetRoutingMetricsRequest) (*GetRoutingMetricsResponse, error)
 	mustEmbedUnimplementedMessagingServiceServer()
 }
 
@@ -80,6 +188,30 @@ func (UnimplementedMessagingServiceServer) Send(context.Context, *SendRequest) (
 }
 func (UnimplementedMessagingServiceServer) Pull(context.Context, *PullRequest) (*PullResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pull not implemented")
+}
+func (UnimplementedMessagingServiceServer) CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateGroup not implemented")
+}
+func (UnimplementedMessagingServiceServer) AddGroupMember(context.Context, *AddGroupMemberRequest) (*AddGroupMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddGroupMember not implemented")
+}
+func (UnimplementedMessagingServiceServer) RemoveGroupMember(context.Context, *RemoveGroupMemberRequest) (*RemoveGroupMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveGroupMember not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetGroups(context.Context, *GetGroupsRequest) (*GetGroupsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGroups not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGroupMembers not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetActivePeers(context.Context, *GetActivePeersRequest) (*GetActivePeersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetActivePeers not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetRelayChains(context.Context, *GetRelayChainsRequest) (*GetRelayChainsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRelayChains not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetRoutingMetrics(context.Context, *GetRoutingMetricsRequest) (*GetRoutingMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRoutingMetrics not implemented")
 }
 func (UnimplementedMessagingServiceServer) mustEmbedUnimplementedMessagingServiceServer() {}
 func (UnimplementedMessagingServiceServer) testEmbeddedByValue()                          {}
@@ -138,11 +270,155 @@ func _MessagingService_Pull_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessagingService_CreateGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).CreateGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_CreateGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).CreateGroup(ctx, req.(*CreateGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_AddGroupMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddGroupMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).AddGroupMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_AddGroupMember_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).AddGroupMember(ctx, req.(*AddGroupMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_RemoveGroupMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveGroupMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).RemoveGroupMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_RemoveGroupMember_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).RemoveGroupMember(ctx, req.(*RemoveGroupMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_GetGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetGroups(ctx, req.(*GetGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_GetGroupMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetGroupMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetGroupMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetGroupMembers(ctx, req.(*GetGroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_GetActivePeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetActivePeersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetActivePeers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetActivePeers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetActivePeers(ctx, req.(*GetActivePeersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_GetRelayChains_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRelayChainsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetRelayChains(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetRelayChains_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetRelayChains(ctx, req.(*GetRelayChainsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_GetRoutingMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRoutingMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetRoutingMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetRoutingMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetRoutingMetrics(ctx, req.(*GetRoutingMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessagingService_ServiceDesc is the grpc.ServiceDesc for MessagingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var MessagingService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "messaging.v1.MessagingService",
+	ServiceName: "heroin.messaging.v1.MessagingService",
 	HandlerType: (*MessagingServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -152,6 +428,38 @@ var MessagingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Pull",
 			Handler:    _MessagingService_Pull_Handler,
+		},
+		{
+			MethodName: "CreateGroup",
+			Handler:    _MessagingService_CreateGroup_Handler,
+		},
+		{
+			MethodName: "AddGroupMember",
+			Handler:    _MessagingService_AddGroupMember_Handler,
+		},
+		{
+			MethodName: "RemoveGroupMember",
+			Handler:    _MessagingService_RemoveGroupMember_Handler,
+		},
+		{
+			MethodName: "GetGroups",
+			Handler:    _MessagingService_GetGroups_Handler,
+		},
+		{
+			MethodName: "GetGroupMembers",
+			Handler:    _MessagingService_GetGroupMembers_Handler,
+		},
+		{
+			MethodName: "GetActivePeers",
+			Handler:    _MessagingService_GetActivePeers_Handler,
+		},
+		{
+			MethodName: "GetRelayChains",
+			Handler:    _MessagingService_GetRelayChains_Handler,
+		},
+		{
+			MethodName: "GetRoutingMetrics",
+			Handler:    _MessagingService_GetRoutingMetrics_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

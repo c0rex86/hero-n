@@ -27,7 +27,7 @@ type Transport struct {
 
 // адаптивный роутер
 type AdaptiveRouter struct {
-    mu        sync.RWMutex
+    Mu        sync.RWMutex
     routes    map[string]*RouteMetrics // transport id -> metrics
     transports []Transport
     window    time.Duration
@@ -69,25 +69,25 @@ func NewAdaptiveRouter(windowSec int, thresholdMs int) *AdaptiveRouter {
 
 // обновить метрики транспорта
 func (r *AdaptiveRouter) UpdateMetrics(transportID string, m RouteMetrics) {
-    r.mu.Lock()
-    defer r.mu.Unlock()
-    
+    r.Mu.Lock()
+    defer r.Mu.Unlock()
+
     m.LastUpdate = time.Now()
     r.routes[transportID] = &m
 }
 
 // получить лучший транспорт
 func (r *AdaptiveRouter) SelectBestTransport() *Transport {
-    r.mu.RLock()
-    defer r.mu.RUnlock()
-    
+    r.Mu.RLock()
+    defer r.Mu.RUnlock()
+
     if len(r.transports) == 0 {
         return nil
     }
-    
+
     var best *Transport
     bestScore := -1.0
-    
+
     for _, t := range r.transports {
         score := r.scoreTransport(t.ID)
         if score > bestScore {
@@ -95,7 +95,7 @@ func (r *AdaptiveRouter) SelectBestTransport() *Transport {
             best = &t
         }
     }
-    
+
     return best
 }
 
@@ -127,9 +127,9 @@ func (r *AdaptiveRouter) scoreTransport(id string) float64 {
 
 // добавить транспорт
 func (r *AdaptiveRouter) AddTransport(t Transport) {
-    r.mu.Lock()
-    defer r.mu.Unlock()
-    
+    r.Mu.Lock()
+    defer r.Mu.Unlock()
+
     // проверка дублей
     for i, existing := range r.transports {
         if existing.ID == t.ID {
@@ -137,15 +137,15 @@ func (r *AdaptiveRouter) AddTransport(t Transport) {
             return
         }
     }
-    
+
     r.transports = append(r.transports, t)
 }
 
 // удалить транспорт
 func (r *AdaptiveRouter) RemoveTransport(id string) {
-    r.mu.Lock()
-    defer r.mu.Unlock()
-    
+    r.Mu.Lock()
+    defer r.Mu.Unlock()
+
     for i, t := range r.transports {
         if t.ID == id {
             r.transports = append(r.transports[:i], r.transports[i+1:]...)
@@ -184,4 +184,23 @@ func min(a, b float64) float64 {
         return a
     }
     return b
+}
+
+func (r *AdaptiveRouter) GetTransports() []Transport {
+    r.Mu.RLock()
+    defer r.Mu.RUnlock()
+
+    transports := make([]Transport, len(r.transports))
+    copy(transports, r.transports)
+    return transports
+}
+
+func (r *AdaptiveRouter) GetMetrics(transportID string) RouteMetrics {
+    r.Mu.RLock()
+    defer r.Mu.RUnlock()
+
+    if m, ok := r.routes[transportID]; ok {
+        return *m
+    }
+    return RouteMetrics{}
 }

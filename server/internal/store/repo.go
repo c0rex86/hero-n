@@ -15,16 +15,16 @@ type AuthRepo struct { db *sql.DB }
 func NewAuthRepo(db *sql.DB) *AuthRepo { return &AuthRepo{db: db} }
 
 func (r *AuthRepo) CreateUser(ctx context.Context, u auth.UserRecord) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO users (id, username, server_salt, password_hash, public_key, second_factor_secret, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.Username, u.ServerSalt, u.PasswordHash, u.PublicKey, u.SecondFactorSecret, u.CreatedAt)
+	_, err := r.db.ExecContext(ctx, `INSERT INTO users (id, username, server_salt, password_hash, verifier, public_key, second_factor_secret, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, u.Username, u.ServerSalt, u.PasswordHash, u.Verifier, u.PublicKey, u.SecondFactorSecret, u.CreatedAt)
 	if err != nil { return fmt.Errorf("create user: %w", err) }
 	return nil
 }
 
 func (r *AuthRepo) FindUserByUsername(ctx context.Context, username string) (*auth.UserRecord, error) {
-	row := r.db.QueryRowContext(ctx, `SELECT id, username, server_salt, password_hash, public_key, second_factor_secret, created_at FROM users WHERE username = ?`, username)
+	row := r.db.QueryRowContext(ctx, `SELECT id, username, server_salt, password_hash, verifier, public_key, second_factor_secret, created_at FROM users WHERE username = ?`, username)
 	var u auth.UserRecord
-	if err := row.Scan(&u.ID, &u.Username, &u.ServerSalt, &u.PasswordHash, &u.PublicKey, &u.SecondFactorSecret, &u.CreatedAt); err != nil {
+	if err := row.Scan(&u.ID, &u.Username, &u.ServerSalt, &u.PasswordHash, &u.Verifier, &u.PublicKey, &u.SecondFactorSecret, &u.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) { return nil, nil }
 		return nil, fmt.Errorf("find user: %w", err)
 	}

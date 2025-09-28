@@ -16,6 +16,11 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/codes"
+
+	"dev.c0rex64.heroin/internal/metrics"
+	"dev.c0rex64.heroin/internal/p2p"
+	"dev.c0rex64.heroin/internal/relay"
+	"dev.c0rex64.heroin/internal/routing"
 )
 
 type Server struct {
@@ -25,6 +30,11 @@ type Server struct {
 	AuthSvc      AuthService
 	MessagingSvc MessagingService
 	StorageSvc   StorageService
+	GroupSvc     GroupService
+	Collector    *metrics.Collector
+	StreamMgr    *p2p.StreamManager
+	RelayMgr     *relay.RelayManager
+	Router       *routing.AdaptiveRouter
 
 	authv1.UnimplementedAuthServiceServer
 	msgv1.UnimplementedMessagingServiceServer
@@ -97,18 +107,24 @@ func (s *Server) Start() error {
 	return s.gs.Serve(s.lis)
 }
 
+func (s *Server) Stop() {
+	s.gs.GracefulStop()
+}
+
 // Auth
 
 func (s *Server) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
+	if s.Collector != nil { s.Collector.RecordMessage("auth", "register") }
 	id, err := s.AuthSvc.Register(ctx, req.Username, req.PasswordProof, req.ClientPubkey)
-	if err != nil { return nil, err }
+	if err != nil { if s.Collector != nil { s.Collector.RecordMessage("auth", "register_failed") }; return nil, err }
 	return &authv1.RegisterResponse{UserId: id}, nil
 }
 
 func (s *Server) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
+	if s.Collector != nil { s.Collector.RecordMessage("auth", "login") }
 	now := time.Now()
 	access, refresh, exp, err := s.AuthSvc.Login(ctx, req.Username, req.PasswordProof, req.DeviceId, req.SecondaryCode, now)
-	if err != nil { return nil, err }
+	if err != nil { if s.Collector != nil { s.Collector.RecordMessage("auth", "login_failed") }; return nil, err }
 	return &authv1.LoginResponse{AccessToken: access, RefreshToken: refresh, ExpiresAtUnix: exp.Unix()}, nil
 }
 
@@ -128,10 +144,11 @@ func (s *Server) GetPublicKey(ctx context.Context, req *authv1.GetPublicKeyReque
 // Messaging
 
 func (s *Server) Send(ctx context.Context, req *msgv1.SendRequest) (*msgv1.SendResponse, error) {
+	if s.Collector != nil { s.Collector.RecordMessage("msg", "send") }
 	b, err := json.Marshal(req.Envelope)
-	if err != nil { return nil, err }
-	if err := s.MessagingSvc.Send(ctx, b); err != nil { return nil, err }
-	return &msgv1.SendResponse{Accepted: true}, nil
+	if err != nil { if s.Collector != nil { s.Collector.RecordMessage("msg", "send_failed") }; return nil, err }
+	if err := s.MessagingSvc.Send(ctx, b); err != nil { if s.Collector != nil { s.Collector.RecordMessage("msg", "send_failed") }; return nil, err }
+	return &msgv1.SendResponse{Success: true}, nil
 }
 
 func (s *Server) Pull(ctx context.Context, req *msgv1.PullRequest) (*msgv1.PullResponse, error) {
@@ -152,28 +169,74 @@ func (s *Server) Pull(ctx context.Context, req *msgv1.PullRequest) (*msgv1.PullR
 // Storage
 
 func (s *Server) PutFile(stream stgv1.StorageService_PutFileServer) error {
+	if s.Collector != nil { s.Collector.RecordFileOp("upload", "start") }
 	var chunks [][]byte
 	var name, mime string
 	var size int64
 	var b3 []byte
+	var totalBytes int64
 	for {
 		req, err := stream.Recv()
 		if err != nil { break }
 		name, mime, size = req.Name, req.Mime, req.SizeBytes
 		if len(b3) == 0 && len(req.TotalBlake3) > 0 { b3 = append([]byte(nil), req.TotalBlake3...) }
 		chunks = append(chunks, req.EncryptedCarChunk)
+		totalBytes += int64(len(req.EncryptedCarChunk))
 		if req.LastChunk { break }
 	}
 	fileID, cid, err := s.StorageSvc.PutCAR(stream.Context(), name, mime, size, chunks, b3)
-	if err != nil { return err }
+	if err != nil { if s.Collector != nil { s.Collector.RecordFileOp("upload", "failed") }; return err }
+	if s.Collector != nil { s.Collector.RecordFileOp("upload", "success"); s.Collector.AddCARBytes(totalBytes) }
 	return stream.SendAndClose(&stgv1.PutFileResponse{Accepted: true, FileId: fileID, Cid: cid})
 }
 
 func (s *Server) GetFile(req *stgv1.GetFileRequest, stream stgv1.StorageService_GetFileServer) error {
+	if s.Collector != nil { s.Collector.RecordFileOp("download", "start") }
 	chunks, err := s.StorageSvc.GetCAR(stream.Context(), req.Cid)
-	if err != nil { return err }
+	if err != nil { if s.Collector != nil { s.Collector.RecordFileOp("download", "failed") }; return err }
+	var totalBytes int64
 	for i, ch := range chunks {
-		if err := stream.Send(&stgv1.GetFileResponse{EncryptedCarChunk: ch, LastChunk: i == len(chunks)-1}); err != nil { return err }
+		totalBytes += int64(len(ch))
+		if err := stream.Send(&stgv1.GetFileResponse{EncryptedCarChunk: ch, LastChunk: i == len(chunks)-1}); err != nil {
+			if s.Collector != nil { s.Collector.RecordFileOp("download", "failed") }
+			return err
+		}
 	}
+	if s.Collector != nil { s.Collector.RecordFileOp("download", "success"); s.Collector.AddCARBytes(totalBytes) }
 	return nil
+}
+
+func (s *Server) GetActivePeers(ctx context.Context, req *msgv1.GetActivePeersRequest) (*msgv1.GetActivePeersResponse, error) {
+	if s.StreamMgr == nil { return nil, status.Error(codes.Unimplemented, "p2p not configured") }
+	peers := s.StreamMgr.GetActivePeers()
+	return &msgv1.GetActivePeersResponse{PeerIds: peers}, nil
+}
+
+func (s *Server) GetRelayChains(ctx context.Context, req *msgv1.GetRelayChainsRequest) (*msgv1.GetRelayChainsResponse, error) {
+	if s.RelayMgr == nil { return nil, status.Error(codes.Unimplemented, "relay not configured") }
+	chains := s.RelayMgr.GetChains()
+	resp := &msgv1.GetRelayChainsResponse{Chains: make([]*msgv1.RelayChain, 0, len(chains))}
+	for id, chain := range chains {
+		resp.Chains = append(resp.Chains, &msgv1.RelayChain{Id: id, RelayCount: int32(len(chain.GetRelayAddrs()))})
+	}
+	return resp, nil
+}
+
+func (s *Server) GetRoutingMetrics(ctx context.Context, req *msgv1.GetRoutingMetricsRequest) (*msgv1.GetRoutingMetricsResponse, error) {
+	if s.Router == nil { return nil, status.Error(codes.Unimplemented, "routing not configured") }
+	transports := s.Router.GetTransports()
+	resp := &msgv1.GetRoutingMetricsResponse{Transports: make([]*msgv1.TransportMetrics, 0, len(transports))}
+	for _, t := range transports {
+		metrics := s.Router.GetMetrics(t.ID)
+		resp.Transports = append(resp.Transports, &msgv1.TransportMetrics{
+			TransportId:  t.ID,
+			LatencyMs:    int32(metrics.Latency.Milliseconds()),
+			PacketLoss:   float32(metrics.PacketLoss),
+			JitterMs:     int32(metrics.Jitter.Milliseconds()),
+			Stability:    float32(metrics.Stability),
+			BlockingRisk: float32(metrics.BlockingRisk),
+			Load:         float32(metrics.Load),
+		})
+	}
+	return resp, nil
 }

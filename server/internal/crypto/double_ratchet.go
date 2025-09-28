@@ -69,8 +69,9 @@ func InitBob(sharedSecret [32]byte, bobPriv [32]byte) (*DoubleRatchet, error) {
 // зашифровать сообщение
 func (dr *DoubleRatchet) Encrypt(plaintext []byte, ad []byte) ([]byte, [32]byte, error) {
     // chain key -> message key
+    var msgKey [32]byte
     msgKey, dr.sendChainKey = kdfCK(dr.sendChainKey)
-    
+
     // шифруем
     header := dr.dhPubSend
     ciphertext := encrypt(msgKey, plaintext, append(ad, header[:]...))
@@ -86,25 +87,26 @@ func (dr *DoubleRatchet) Decrypt(ciphertext []byte, header [32]byte, ad []byte) 
     if msgKey, ok := dr.trySkipped(header, dr.recvN); ok {
         return decrypt(msgKey, ciphertext, append(ad, header[:]...))
     }
-    
+
     // новый dh?
     if header != dr.dhRecv {
         if err := dr.dhRatchet(header); err != nil {
             return nil, err
         }
     }
-    
+
     // chain key -> message key
-    msgKey, dr.recvChainKey := kdfCK(dr.recvChainKey)
-    
+    var msgKey [32]byte
+    msgKey, dr.recvChainKey = kdfCK(dr.recvChainKey)
+
     // расшифровываем
     plaintext, err := decrypt(msgKey, ciphertext, append(ad, header[:]...))
     if err != nil {
         return nil, err
     }
-    
+
     dr.recvN++
-    
+
     return plaintext, nil
 }
 
@@ -112,27 +114,27 @@ func (dr *DoubleRatchet) Decrypt(ciphertext []byte, header [32]byte, ad []byte) 
 func (dr *DoubleRatchet) dhRatchet(header [32]byte) error {
     // сохраняем скипнутые
     dr.skipMessageKeys(dr.dhRecv, dr.prevChainN)
-    
+
     // новая receive chain
     dr.prevChainN = dr.sendN
     dr.sendN = 0
     dr.recvN = 0
     dr.dhRecv = header
-    
+
     // receive dh
     dhOut := dhExchange(dr.dhSend, dr.dhRecv)
     dr.rootKey, dr.recvChainKey = kdfRK(dr.rootKey, dhOut)
-    
+
     // новая send dh пара
     if _, err := rand.Read(dr.dhSend[:]); err != nil {
         return err
     }
     curve25519.ScalarBaseMult(&dr.dhPubSend, &dr.dhSend)
-    
+
     // send dh
     dhOut = dhExchange(dr.dhSend, dr.dhRecv)
     dr.rootKey, dr.sendChainKey = kdfRK(dr.rootKey, dhOut)
-    
+
     return nil
 }
 

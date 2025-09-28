@@ -1,12 +1,14 @@
 package messaging
 
 import (
-	"context"
-	"crypto/ed25519"
-	"encoding/binary"
-	"encoding/json"
-	"errors"
-	"time"
+    "context"
+    "crypto/ed25519"
+    "encoding/binary"
+    "encoding/json"
+    "errors"
+    "time"
+
+    "dev.c0rex64.heroin/internal/crypto"
 )
 
 type PublicKeyProvider interface {
@@ -14,8 +16,9 @@ type PublicKeyProvider interface {
 }
 
 type Service struct {
-	q  *Queue
-	kp PublicKeyProvider
+	q       *Queue
+	kp      PublicKeyProvider
+	ratchet *crypto.DoubleRatchet
 }
 
 type EnvelopeData struct {
@@ -27,7 +30,9 @@ type EnvelopeData struct {
 	SenderID       string `json:"sender_id"`
 }
 
-func NewService(q *Queue, kp PublicKeyProvider) *Service { return &Service{q: q, kp: kp} }
+func NewService(q *Queue, kp PublicKeyProvider) *Service {
+	return &Service{q: q, kp: kp, ratchet: &crypto.DoubleRatchet{}}
+}
 
 func (s *Service) Send(ctx context.Context, envelope []byte) error {
 	var env EnvelopeData
@@ -54,6 +59,29 @@ func (s *Service) Pull(ctx context.Context, conversationID string, since int64) 
 
 func (s *Service) PullPage(ctx context.Context, conversationID string, since int64, limit int) ([][]byte, int64, bool, error) {
 	return s.q.PullPage(ctx, conversationID, since, limit)
+}
+
+func (s *Service) InitRatchet(sharedSecret [32]byte, isInitiator bool, remotePub [32]byte) error {
+	if isInitiator {
+		dr, err := crypto.InitAlice(sharedSecret, remotePub)
+		if err != nil { return err }
+		*s.ratchet = *dr
+	} else {
+		dr, err := crypto.InitBob(sharedSecret, remotePub)
+		if err != nil { return err }
+		*s.ratchet = *dr
+	}
+	return nil
+}
+
+func (s *Service) EncryptMessage(plaintext []byte, ad []byte) ([]byte, error) {
+	ciphertext, _, err := s.ratchet.Encrypt(plaintext, ad)
+	return ciphertext, err
+}
+
+func (s *Service) DecryptMessage(ciphertext []byte, ad []byte) ([]byte, error) {
+	plaintext, err := s.ratchet.Decrypt(ciphertext, [32]byte{}, ad)
+	return plaintext, err
 }
 
 func signPayload(e EnvelopeData) []byte {

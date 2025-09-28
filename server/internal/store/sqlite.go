@@ -15,6 +15,14 @@ type DB struct {
 	SQL *sql.DB
 }
 
+// закрыть соединение с бд
+func (d *DB) Close() error {
+	if d.SQL != nil {
+		return d.SQL.Close()
+	}
+	return nil
+}
+
 func Open(ctx context.Context, dsn string) (*DB, error) {
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {

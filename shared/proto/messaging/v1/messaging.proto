@@ -1,6 +1,25 @@
 syntax = "proto3";
-package messaging.v1;
-option go_package = "dev.c0rex64.heroin/shared/proto/messaging/v1;msgv1";
+
+package heroin.messaging.v1;
+
+option go_package = "dev.c0rex64.heroin/api/messaging/v1;msgv1";
+
+service MessagingService {
+  rpc Send(SendRequest) returns (SendResponse);
+  rpc Pull(PullRequest) returns (PullResponse);
+
+  // группы
+  rpc CreateGroup(CreateGroupRequest) returns (CreateGroupResponse);
+  rpc AddGroupMember(AddGroupMemberRequest) returns (AddGroupMemberResponse);
+  rpc RemoveGroupMember(RemoveGroupMemberRequest) returns (RemoveGroupMemberResponse);
+  rpc GetGroups(GetGroupsRequest) returns (GetGroupsResponse);
+  rpc GetGroupMembers(GetGroupMembersRequest) returns (GetGroupMembersResponse);
+
+  // p2p и routing
+  rpc GetActivePeers(GetActivePeersRequest) returns (GetActivePeersResponse);
+  rpc GetRelayChains(GetRelayChainsRequest) returns (GetRelayChainsResponse);
+  rpc GetRoutingMetrics(GetRoutingMetricsRequest) returns (GetRoutingMetricsResponse);
+}
 
 message Envelope {
   string conversation_id = 1;
@@ -9,14 +28,15 @@ message Envelope {
   bytes signature = 4;
   int64 sent_at_unix = 5;
   string sender_id = 6;
+  bool is_group = 7; // флаг группового сообщения
 }
 
 message SendRequest {
-  Envelope envelope = 1;
+  bytes envelope = 1;
 }
 
 message SendResponse {
-  bool accepted = 1;
+  bool success = 1;
 }
 
 message PullRequest {
@@ -31,7 +51,96 @@ message PullResponse {
   bool has_more = 3;
 }
 
-service MessagingService {
-  rpc Send(SendRequest) returns (SendResponse);
-  rpc Pull(PullRequest) returns (PullResponse);
+// группы
+message CreateGroupRequest {
+  string name = 1;
+}
+
+message CreateGroupResponse {
+  string group_id = 1;
+  bytes encrypted_key = 2; // групповой ключ зашифрованный для создателя
+}
+
+message AddGroupMemberRequest {
+  string group_id = 1;
+  string user_id = 2;
+}
+
+message AddGroupMemberResponse {
+  bool success = 1;
+}
+
+message RemoveGroupMemberRequest {
+  string group_id = 1;
+  string user_id = 2;
+}
+
+message RemoveGroupMemberResponse {
+  bool success = 1;
+}
+
+message GetGroupsRequest {
+  // пусто, возвращает группы текущего юзера
+}
+
+message Group {
+  string id = 1;
+  string name = 2;
+  string creator_id = 3;
+  int64 created_at_unix = 4;
+  int32 member_count = 5;
+  bytes encrypted_key = 6; // ключ группы для юзера
+  int32 key_version = 7;
+}
+
+message GetGroupsResponse {
+  repeated Group groups = 1;
+}
+
+message GetGroupMembersRequest {
+  string group_id = 1;
+}
+
+message GroupMember {
+  string user_id = 1;
+  string role = 2; // admin или member
+  int64 joined_at_unix = 3;
+}
+
+message GetGroupMembersResponse {
+  repeated GroupMember members = 1;
+}
+
+// p2p и routing
+message GetActivePeersRequest {}
+
+message GetActivePeersResponse {
+  repeated string peer_ids = 1;
+}
+
+message GetRelayChainsRequest {}
+
+message RelayChain {
+  string id = 1;
+  int32 relay_count = 2;
+}
+
+message GetRelayChainsResponse {
+  repeated RelayChain chains = 1;
+}
+
+message GetRoutingMetricsRequest {}
+
+message TransportMetrics {
+  string transport_id = 1;
+  int32 latency_ms = 2;
+  float packet_loss = 3;
+  int32 jitter_ms = 4;
+  float stability = 5;
+  float blocking_risk = 6;
+  float load = 7;
+}
+
+message GetRoutingMetricsResponse {
+  repeated TransportMetrics transports = 1;
 }

@@ -43,6 +43,10 @@ type RoutingConfig struct {
 	Relays             []string `yaml:"relays"`
 	SwitchThresholdMS  int      `yaml:"switch_threshold_ms"`
 	MetricsWindowSec   int      `yaml:"metrics_window_sec"`
+	LatencyThresholdMs int      `yaml:"latency_threshold_ms"`
+	EnableP2P          bool     `yaml:"enable_p2p"`
+	EnableQUIC         bool     `yaml:"enable_quic"`
+	BootstrapPeers     []string `yaml:"bootstrap_peers"`
 }
 
 type IPFSConfig struct {
